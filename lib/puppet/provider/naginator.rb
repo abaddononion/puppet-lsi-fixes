@@ -60,4 +60,32 @@ class Puppet::Provider::Naginator < Puppet::Provider::ParsedFile
       @property_hash = self.class.nagios_type.new
     end
   end
+
+  def self.match_providers_with_resources(resources)
+    return unless resources
+    matchers = resources.dup
+
+    # Hack to fixup record 0 parsing issues
+    if @records[0] 
+      @records[0].each do |entry,value|
+        @records[0].send("#{entry}=", value[0]) if value.kind_of?(Array)
+      end
+    end
+
+    @records.each do |record|
+      # Skip things like comments and blank lines
+      next if skip_record?(record)
+
+      if name = record[:name] and resource = resources[name]
+        resource.provider = new(record)
+      elsif respond_to?(:match)
+        if resource = match(record, matchers)
+          # Remove this resource from circulation so we don't unnecessarily try to match
+          matchers.delete(resource.title)
+          record[:name] = resource[:name]
+          resource.provider = new(record)
+        end
+      end
+    end
+  end
 end
