@@ -72,7 +72,7 @@ module Puppet::Util::NagiosMaker
       desc 'The target.'
 
       defaultto do
-        resource.class.defaultprovider.default_target
+        "/etc/nagios/puppet/#{full_name.to_s}_" + resource[:name].gsub('/', '_') + ".cfg"
       end
     end
 
