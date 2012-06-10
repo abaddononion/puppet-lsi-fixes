@@ -27,8 +27,44 @@ module Puppet::Util::NagiosMaker
       # supported.
       next if param.to_s =~ /^[0-9]/
 
-      type.newproperty(param) do
-        desc "Nagios configuration file parameter."
+      type.newproperty(param, :array_matching => :all) do
+	desc "Nagios configuration file parameter."
+	
+	def change_to_s(currentvalue, newvalue)
+	  currentvalue = currentvalue.join(",") if currentvalue != :absent and currentvalue.is_a?(Array)
+	  currentvalue = currentvalue.to_s() if currentvalue.is_a?(Symbol)
+	  newvalue = newvalue.join(",") if newvalue.is_a?(Array)
+	  newvalue = newvalue.to_s() if newvalue.is_a?(Symbol)
+	  super(currentvalue, newvalue)
+	end
+
+	def is_to_s(value)
+	  if value.is_a?(Array)
+	    if value.include?(:absent)
+	      super
+	    else
+	      super(value.join(','))
+	    end
+	  else
+	    super(value.to_s())
+	  end
+	end
+	
+	def should_to_s(value)
+	  if value.is_a?(Array)
+	    if value.include?(:absent)
+	      super
+	    else
+	      super(value.join(','))
+	    end
+	  else
+	    super(value.to_s())
+	  end
+	end
+	
+	def insync?(is)
+          should_to_s(should) == is_to_s(is)
+	end
       end
     end
 
